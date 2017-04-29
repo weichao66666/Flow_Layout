@@ -15,10 +15,10 @@ public class FlowView extends ViewGroup {
     private class Line {
         private int mWidth;// 行占用的宽度
         private int mHeight;// 当前行的高度
-        private List<View> children = new ArrayList<View>();// 记录当前行管理的view对象
+        private List<View> mChildList = new ArrayList<>();// 记录当前行管理的view对象
 
         public void addChild(View child) {
-            children.add(child);
+            mChildList.add(child);
             // 让当前行高度等于最高的一个孩子的高度
             mHeight = mHeight < child.getMeasuredHeight() ? child.getMeasuredHeight() : mHeight;
             mWidth += child.getMeasuredWidth();
@@ -26,15 +26,15 @@ public class FlowView extends ViewGroup {
 
         // 分配行里面每个TextView的位置
         public void layout(int left, int top) {
-            mWidth += (children.size() - 1) * HORIZONTAL_SPACING;
+            mWidth += (mChildList.size() - 1) * HORIZONTAL_SPACING;
             int childrenWidth = getMeasuredWidth() - getPaddingLeft() - getPaddingRight() - mWidth;
-            if (children == null || children.size() == 0) {
+            if (mChildList == null || mChildList.size() == 0) {
                 return;
             }
 
-            int childWidth = childrenWidth / children.size();
-            for (int i = 0; i < children.size(); i++) {
-                View child = children.get(i);
+            int childWidth = childrenWidth / mChildList.size();
+            for (int i = 0; i < mChildList.size(); i++) {
+                View child = mChildList.get(i);
                 // 重新测量孩子
                 if (childWidth > 0) {
                     int widthMeasureSpec = MeasureSpec.makeMeasureSpec(child.getMeasuredWidth() + childWidth, MeasureSpec.EXACTLY);
@@ -54,17 +54,17 @@ public class FlowView extends ViewGroup {
         }
     }
 
-    private List<Line> mLineLists = new ArrayList<Line>();// 管理当前控件所有行的集合
+    private List<Line> mLineList = new ArrayList<>();// 管理当前控件所有行的集合
     private int mUsedWidth;// 当前行使用的空间
     private Line mLine;
     private int mTotalHeight;
 
     public FlowView(Context context) {
-        super(context);
+        this(context, null);
     }
 
     public FlowView(Context context, AttributeSet attrs) {
-        super(context, attrs);
+        this(context, attrs, 0);
     }
 
     public FlowView(Context context, AttributeSet attrs, int defStyle) {
@@ -74,7 +74,7 @@ public class FlowView extends ViewGroup {
     // 测量方法 有可能调用多次
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        mLineLists.clear();
+        mLineList.clear();
         mLine = null;
         mUsedWidth = 0; // 把之前缓存数据全部清空
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);// 获取到当前FlowLayout的宽的模式
@@ -108,14 +108,14 @@ public class FlowView extends ViewGroup {
                 mLine.addChild(child);// 把孩子添加到新的一行上
             }
         }
-        if (!mLineLists.contains(mLine)) {
-            mLineLists.add(mLine);// 把最后一行添加到集合中
+        if (!mLineList.contains(mLine)) {
+            mLineList.add(mLine);// 把最后一行添加到集合中
         }
         int totalHeight = 0;
-        for (int i = 0; i < mLineLists.size(); i++) {
-            totalHeight += mLineLists.get(i).getHeight();
+        for (int i = 0; i < mLineList.size(); i++) {
+            totalHeight += mLineList.get(i).getHeight();
         }
-        totalHeight += (mLineLists.size() - 1) * VERTICAL_SPACING;
+        totalHeight += (mLineList.size() - 1) * VERTICAL_SPACING;
         totalHeight += getPaddingTop();
         totalHeight += getPaddingBottom();
         setTotalHeight(totalHeight);
@@ -126,8 +126,8 @@ public class FlowView extends ViewGroup {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         top += getPaddingTop();
-        for (int i = 0; i < mLineLists.size(); i++) {
-            Line line = mLineLists.get(i);
+        for (int i = 0; i < mLineList.size(); i++) {
+            Line line = mLineList.get(i);
             line.layout(left + getPaddingLeft(), top); // 分配行的位置 然后再交给每个行去分配位置
             top += line.getHeight();
             top += VERTICAL_SPACING;
@@ -135,7 +135,7 @@ public class FlowView extends ViewGroup {
     }
 
     private void newLine() {
-        mLineLists.add(mLine);// 把之前的行添加到集合中
+        mLineList.add(mLine);// 把之前的行添加到集合中
         mLine = new Line();
         mUsedWidth = 0;
     }
